@@ -38,6 +38,7 @@ private:
 	ros::Subscriber laser_scan_sub_;
 	ros::Subscriber initial_pose_sub_;
 	ros::Subscriber tracker_sub_;
+	ros::Subscriber yolo_sub;
 
 	ros::ServiceServer global_loc_srv_;
 
@@ -57,7 +58,7 @@ private:
 	bool init_request_;
 	bool simple_reset_request_;
 	double init_x_, init_y_, init_t_;
-
+	yolov5_pytorch_ros::BoundingBoxes bbox_;
 	void publishPose(double x, double y, double t,
 			double x_dev, double y_dev, double t_dev,
 			double xy_cov, double yt_cov, double tx_cov);
@@ -76,6 +77,7 @@ private:
 	bool cbSimpleReset(std_srvs::Empty::Request& req, std_srvs::Empty::Response& res);
 	void initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
 	void trackerReceived(const nav_msgs::Odometry& msg);
+	void yoloReceived(const yolov5_pytorch_ros::BoundingBoxes &msg);
 };
 
 }

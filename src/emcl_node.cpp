@@ -35,7 +35,8 @@ void EMclNode::initCommunication(void)
 	laser_scan_sub_ = nh_.subscribe("scan", 2, &EMclNode::cbScan, this);
 	initial_pose_sub_ = nh_.subscribe("initialpose", 2, &EMclNode::initialPoseReceived, this);
 	tracker_sub_ = nh_.subscribe("tracker", 2, &EMclNode::trackerReceived, this);
-
+	yolo_sub = nh_.subscribe("detected_objects_in_image", 1, &EMclNode::yoloReceived, this);
+	
 	global_loc_srv_ = nh_.advertiseService("global_localization", &EMclNode::cbSimpleReset, this);
 
 	private_nh_.param("global_frame_id", global_frame_id_, std::string("map"));
@@ -66,13 +67,14 @@ void EMclNode::initPF(void)
 	int num_particles;
 	double alpha_th, open_space_th;
 	double ex_rad_pos, ex_rad_ori;
+	yolov5_pytorch_ros::BoundingBoxes bbox;
 	private_nh_.param("num_particles", num_particles, 0);
 	private_nh_.param("alpha_threshold", alpha_th, 0.0);
 	private_nh_.param("open_space_threshold", open_space_th, 0.05);
 	private_nh_.param("expansion_radius_position", ex_rad_pos, 0.1);
 	private_nh_.param("expansion_radius_orientation", ex_rad_ori, 0.2);
 
-	pf_.reset(new ExpResetMcl(init_pose, num_particles, scan, om, map,
+	pf_.reset(new ExpResetMcl(init_pose, num_particles, scan, om, map,bbox,
 				alpha_th, open_space_th, ex_rad_pos, ex_rad_ori));
 }
 
@@ -112,6 +114,12 @@ void EMclNode::cbScan(const sensor_msgs::LaserScan::ConstPtr &msg)
     pf_->setScan(msg);
 }
 
+void EMclNode::yoloReceived(const yolov5_pytorch_ros::BoundingBoxes &msg) 
+{
+	 bbox_= msg;
+
+}
+
 void EMclNode::initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg)
 {
 	init_request_ = true;
@@ -148,6 +156,7 @@ void EMclNode::loop(void)
 
 	double lx, ly, lt;
 	bool inv;
+	yolov5_pytorch_ros::BoundingBoxes bbox =  bbox_;
 	if(not getLidarPose(lx, ly, lt, inv)){
 		ROS_INFO("can't get lidar pose info");
 		return;
@@ -157,7 +166,7 @@ void EMclNode::loop(void)
 	struct timespec ts_start, ts_end;
 	clock_gettime(CLOCK_REALTIME, &ts_start);
 	*/
-	pf_->sensorUpdate(lx, ly, lt, inv);
+	pf_->sensorUpdate(lx, ly, lt, inv, bbox);
 	/*
 	clock_gettime(CLOCK_REALTIME, &ts_end);
 	struct tm tm;

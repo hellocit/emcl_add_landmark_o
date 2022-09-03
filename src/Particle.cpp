@@ -5,6 +5,7 @@
 #include "emcl/Particle.h"
 #include "emcl/Mcl.h"
 #include <cmath>
+#include <yolov5_pytorch_ros/BoundingBoxes.h>
 
 namespace emcl {
 
@@ -13,6 +14,30 @@ namespace emcl {
 Particle::Particle(double x, double y, double t, double w) : p_(x, y, t)
 {
 	w_ = w;
+}
+
+double Particle::vision_weight(yolov5_pytorch_ros::BoundingBoxes& bbox)
+{	
+	double vision_weight_ = 0;
+	for(auto &b:bbox.bounding_boxes) 
+	{
+		if(b.Class == "Vending machine"){
+			double phi = atan2(-7 - p_.y_, 4 - p_.x_) + p_.t_;
+			if (phi > 2 * M_PI){
+				phi -= 2 * M_PI;
+			}
+			else if(phi > 2 * M_PI){
+				phi += 2 * M_PI;
+			}
+			
+			double theta = phi - b.yaw;
+			vision_weight_ = (cos(theta) + 1) * b.probability;
+		}
+		else{
+			vision_weight_ = 0; 
+		}
+	}
+	return vision_weight_;
 }
 
 double Particle::likelihood(LikelihoodFieldMap *map, Scan &scan)

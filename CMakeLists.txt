@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   tf2
   tf2_ros
+  yolov5_pytorch_ros
 )
 
 
@@ -36,6 +37,7 @@ add_executable(emcl2_node src/emcl2_node.cpp)
 add_dependencies(mcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(emcl_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(emcl2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(Particle ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(mcl_node Mcl Particle Pose Scan OdomModel LikelihoodFieldMap ${catkin_LIBRARIES})
 target_link_libraries(emcl_node Mcl ExpResetMcl Particle Pose Scan OdomModel LikelihoodFieldMap ${catkin_LIBRARIES})
